@@ -30,7 +30,24 @@ app.post('/registro', async (req, res) => {
             return res.status(409).send("ERROR 409: El usuario ya existe");
         }
 
+        // 3. Si no es duplicado, cifrar la contraseña con bcrypt
+        try {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+            // 4. Guardar en la base de datos
+            const sqlInsert = `INSERT INTO usuarios (email, password) VALUES (?, ?)`;
+            
+            db.run(sqlInsert, [email, hashedPassword], function(err) {
+                if (err) return res.status(500).send("Error al guardar usuario");
+                
+                // 5. Éxito
+                res.status(201).send("Success 201: Usuario Registrado");
+            });
+
+        } catch (error) {
+            res.status(500).send("Error al cifrar contraseña");
+        }
     });
 });
 
