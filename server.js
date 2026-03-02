@@ -11,6 +11,50 @@ app.use(express.json());
 // Conexión a la base de datos
 const db = new sqlite3.Database('./usuarios.db');
 
+// ENDPOINT: POST /login
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    // 1. Validar que se proporcionen ambos campos
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email y contraseña son requeridos" });
+    }
+
+    // 2. Buscar el usuario por email en la base de datos
+    const sqlSearch = "SELECT * FROM usuarios WHERE email = ?";
+    
+    db.get(sqlSearch, [email], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ error: "Error en el servidor" });
+        }
+        
+        // 3. Verificar si el usuario existe
+        if (!user) {
+            return res.status(401).json({ error: "Credenciales inválidas" });
+        }
+
+        try {
+            // 4. Comparar la contraseña proporcionada con la almacenada
+            const match = await bcrypt.compare(password, user.password);
+            
+            if (match) {
+                // 5. Login exitoso
+                res.status(200).json({ 
+                    message: "Login exitoso",
+                    email: user.email,
+                    role: user.role 
+                });
+            } else {
+                // 6. Contraseña incorrecta
+                res.status(401).json({ error: "Credenciales inválidas" });
+            }
+        } catch (error) {
+            res.status(500).json({ error: "Error al verificar la contraseña" });
+        }
+    });
+});
+
+
 // ENDPOINT: POST /registro
 app.post('/registro', async (req, res) => {
     const { email, password } = req.body;
