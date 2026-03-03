@@ -1,6 +1,16 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
+const { exec } = require('child_process'); 
+const util = require('util');
+const fs = require('fs').promises;
+const path = require('path');
+const crypto = require('crypto');
+
+
+
+const execPromise = util.promisify(exec);
+
 
 const app = express();
 const PORT = 3000;
@@ -11,44 +21,154 @@ app.use(express.json());
 // Conexión a la base de datos
 const db = new sqlite3.Database('./usuarios.db');
 
+// Función para generar JWT usando Python (versión con archivo temporal)
+async function generarJWT(payload) {
+    let tempFile = null;
+    
+    try {
+        console.log('1. Iniciando generación de JWT');
+        console.log('2. Payload recibido:', payload);
+        
+        // Crear un nombre de archivo temporal único
+        const tempFileName = `temp_${crypto.randomBytes(16).toString('hex')}.json`;
+        tempFile = path.join(__dirname, tempFileName);
+        console.log('3. Archivo temporal:', tempFile);
+        
+        // Preparar los datos para Python
+        const pythonInput = {
+            action: 'generar',
+            payload: payload
+        };
+        
+        // Escribir los datos al archivo temporal
+        await fs.writeFile(tempFile, JSON.stringify(pythonInput));
+        console.log('4. Datos escritos en archivo temporal');
+        
+        // Ejecutar Python con el archivo temporal
+        const comando = `python "${path.join(__dirname, 'jwt_handler.py')}" "${tempFile}"`;
+        console.log('5. Comando a ejecutar:', comando);
+        
+        const { stdout, stderr } = await execPromise(comando);
+        
+        console.log('6. stdout (salida de Python - TOKEN):', stdout ? stdout.substring(0, 50) + '...' : 'vacío');
+        
+        if (stderr) {
+            // Solo mostramos stderr como información, NO como error
+            console.log('7. stderr (información de Python):', stderr);
+        }
+        
+        // Verificar si obtuvimos algo en stdout
+        if (!stdout || stdout.trim() === '') {
+            throw new Error('Python no devolvió ningún token');
+        }
+        
+        const token = stdout.trim();
+        console.log('8. Token generado exitosamente, longitud:', token.length);
+        console.log('9. Token (primeros 20 chars):', token.substring(0, 20));
+        
+        return token;
+        
+    } catch (error) {
+        console.error('ERROR DETALLADO en generarJWT:');
+        console.error('- Mensaje:', error.message);
+        console.error('- Stack:', error.stack);
+        throw new Error('Error al generar token JWT: ' + error.message);
+    } finally {
+        // Limpiar el archivo temporal si existe
+        if (tempFile) {
+            try {
+                // Verificar si el archivo existe antes de eliminarlo
+                try {
+                    await fs.access(tempFile);
+                    await fs.unlink(tempFile);
+                    console.log('10. Archivo temporal eliminado');
+                } catch (e) {
+                    // El archivo ya no existe o no se puede acceder
+                    console.log('Archivo temporal ya no existe o no accesible');
+                }
+            } catch (e) {
+                console.error('Error eliminando archivo temporal:', e);
+            }
+        }
+    }
+}
+
+// Función para verificar JWT usando Python
+async function verificarJWT(token) {
+    try {
+        const { stdout, stderr } = await execPromise(`python jwt_handler.py verificar '${token}'`);
+        
+        if (stderr) {
+            console.error('Error en Python (stderr):', stderr);
+            throw new Error(stderr);
+        }
+        
+        return JSON.parse(stdout); // El resultado viene como JSON
+    } catch (error) {
+        console.error('Error al verificar token:', error);
+        return { valido: false, error: 'Error al verificar token' };
+    }
+}
+
 // ENDPOINT: POST /login
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
-    // 1. Validar que se proporcionen ambos campos
+    console.log('=== INTENTO DE LOGIN ===');
+    console.log('Email:', email);
+
     if (!email || !password) {
         return res.status(400).json({ error: "Email y contraseña son requeridos" });
     }
 
-    // 2. Buscar el usuario por email en la base de datos
     const sqlSearch = "SELECT * FROM usuarios WHERE email = ?";
     
     db.get(sqlSearch, [email], async (err, user) => {
         if (err) {
+            console.error('Error en BD:', err);
             return res.status(500).json({ error: "Error en el servidor" });
         }
         
-        // 3. Verificar si el usuario existe
         if (!user) {
             return res.status(401).json({ error: "Credenciales inválidas" });
         }
 
         try {
-            // 4. Comparar la contraseña proporcionada con la almacenada
             const match = await bcrypt.compare(password, user.password);
             
             if (match) {
-                // 5. Login exitoso
-                res.status(200).json({ 
-                    message: "Login exitoso",
+                console.log('Login exitoso, generando token...');
+                
+                const payload = {
+                    user_id: user.id,
                     email: user.email,
-                    role: user.role 
-                });
+                    role: user.role || 'user'
+                };
+                
+                try {
+                    const token = await generarJWT(payload);
+                    
+                    console.log('Token generado correctamente');
+                    
+                    res.status(200).json({ 
+                        message: "Login exitoso",
+                        token: token,
+                        email: user.email,
+                        role: user.role 
+                    });
+                    
+                } catch (jwtError) {
+                    console.error('ERROR generando JWT:', jwtError);
+                    res.status(500).json({ 
+                        error: "Error al generar token de autenticación",
+                        detalle: jwtError.message 
+                    });
+                }
             } else {
-                // 6. Contraseña incorrecta
                 res.status(401).json({ error: "Credenciales inválidas" });
             }
         } catch (error) {
+            console.error('Error en bcrypt:', error);
             res.status(500).json({ error: "Error al verificar la contraseña" });
         }
     });
