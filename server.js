@@ -1,16 +1,10 @@
+require('dotenv').config();
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
-const { exec } = require('child_process'); 
-const util = require('util');
-const fs = require('fs').promises;
-const path = require('path');
-const crypto = require('crypto');
-
-
-
-const execPromise = util.promisify(exec);
-
+const jwt = require('jsonwebtoken');        
+const JWT_SECRET = process.env.JWT_SECRET; 
 
 const app = express();
 const PORT = 3000;
@@ -21,76 +15,9 @@ app.use(express.json());
 // Conexión a la base de datos
 const db = new sqlite3.Database('./usuarios.db');
 
-// Función para generar JWT usando Python (versión con archivo temporal)
-async function generarJWT(payload) {
-    let tempFile = null;
-    
-    try {
-        console.log('1. Iniciando generación de JWT');
-        console.log('2. Payload recibido:', payload);
-        
-        // Crear un nombre de archivo temporal único
-        const tempFileName = `temp_${crypto.randomBytes(16).toString('hex')}.json`;
-        tempFile = path.join(__dirname, tempFileName);
-        console.log('3. Archivo temporal:', tempFile);
-        
-        // Preparar los datos para Python
-        const pythonInput = {
-            action: 'generar',
-            payload: payload
-        };
-        
-        // Escribir los datos al archivo temporal
-        await fs.writeFile(tempFile, JSON.stringify(pythonInput));
-        console.log('4. Datos escritos en archivo temporal');
-        
-        // Ejecutar Python con el archivo temporal
-        const comando = `python "${path.join(__dirname, 'jwt_handler.py')}" "${tempFile}"`;
-        console.log('5. Comando a ejecutar:', comando);
-        
-        const { stdout, stderr } = await execPromise(comando);
-        
-        console.log('6. stdout (salida de Python - TOKEN):', stdout ? stdout.substring(0, 50) + '...' : 'vacío');
-        
-        if (stderr) {
-            // Solo mostramos stderr como información, NO como error
-            console.log('7. stderr (información de Python):', stderr);
-        }
-        
-        // Verificar si obtuvimos algo en stdout
-        if (!stdout || stdout.trim() === '') {
-            throw new Error('Python no devolvió ningún token');
-        }
-        
-        const token = stdout.trim();
-        console.log('8. Token generado exitosamente, longitud:', token.length);
-        console.log('9. Token (primeros 20 chars):', token.substring(0, 20));
-        
-        return token;
-        
-    } catch (error) {
-        console.error('ERROR DETALLADO en generarJWT:');
-        console.error('- Mensaje:', error.message);
-        console.error('- Stack:', error.stack);
-        throw new Error('Error al generar token JWT: ' + error.message);
-    } finally {
-        // Limpiar el archivo temporal si existe
-        if (tempFile) {
-            try {
-                // Verificar si el archivo existe antes de eliminarlo
-                try {
-                    await fs.access(tempFile);
-                    await fs.unlink(tempFile);
-                    console.log('10. Archivo temporal eliminado');
-                } catch (e) {
-                    // El archivo ya no existe o no se puede acceder
-                    console.log('Archivo temporal ya no existe o no accesible');
-                }
-            } catch (e) {
-                console.error('Error eliminando archivo temporal:', e);
-            }
-        }
-    }
+// Función para generar JWT usando jsonwebtoken
+function generarJWT(payload) {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 }
 
 // Función para verificar JWT usando Python
@@ -182,6 +109,11 @@ app.post('/registro', async (req, res) => {
     // 1. Validar datos de entrada (Password mayor a 8 y menor a 10)
     if (!email || !password || password.length <= 8 || password.length >= 10) {
         return res.status(400).send("Error 400: Credenciales Invalidas");
+    }
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).send("Error 400: Formato de email inválido");
     }
 
     // 2. Verificar duplicados (Email existente)
@@ -292,10 +224,90 @@ app.put('/usuarios/cambiar-password/:email', (req, res) => {
     });
 });
 
+// Middleware para verificar el JWT en rutas protegidas 
+function verificarToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; 
+
+    if (!token) {
+        return res.status(401).json({ error: 'Acceso denegado. Token requerido.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.usuario = decoded;
+        next();
+    } catch (err) {
+        return res.status(403).json({ error: 'Token inválido o expirado.' });
+    }
+}
+
+// ENDPOINT POST /comprar
+app.post('/comprar', verificarToken, (req, res) => {
+    const { producto_id, cantidad } = req.body;
+    const usuario_id = req.usuario.user_id;
+
+    // Validación: campos requeridos
+    if (producto_id === undefined || cantidad === undefined) {
+        return res.status(400).json({ error: "producto_id y cantidad son requeridos." });
+    }
+
+    // Validación: producto_id debe ser entero positivo
+    if (!Number.isInteger(producto_id) || producto_id <= 0) {
+        return res.status(400).json({ error: "producto_id debe ser un número entero positivo." });
+    }
+
+    // Validación: cantidad debe ser entero positivo (no negativa, no cero)
+    if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        return res.status(400).json({ error: "La cantidad debe ser un número entero positivo." });
+    }
+
+    // Buscar el producto en la BD para obtener precio y verificar stock (Anti-SQLi)
+    const sqlProducto = "SELECT * FROM productos WHERE id = ?";
+    db.get(sqlProducto, [producto_id], (err, producto) => {
+        if (err) return res.status(500).json({ error: "Error en el servidor." });
+        if (!producto) return res.status(404).json({ error: "Producto no encontrado." });
+
+        // Verificar stock suficiente
+        if (producto.stock < cantidad) {
+            return res.status(400).json({ 
+                error: "Stock insuficiente.",
+                stock_disponible: producto.stock
+            });
+        }
+
+        const total = producto.precio * cantidad;
+
+        // Registrar la compra — consulta parametrizada (Anti-SQLi)
+        const sqlInsert = `
+            INSERT INTO compras (usuario_id, producto_id, cantidad, total, fecha)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        `;
+        db.run(sqlInsert, [usuario_id, producto_id, cantidad, total], function(err) {
+            if (err) return res.status(500).json({ error: "Error al registrar la compra." });
+
+            const compra_id = this.lastID;
+
+            // Descontar stock — consulta parametrizada (Anti-SQLi)
+            const sqlStock = "UPDATE productos SET stock = stock - ? WHERE id = ?";
+            db.run(sqlStock, [cantidad, producto_id], (err) => {
+                if (err) return res.status(500).json({ error: "Error al actualizar stock." });
+
+                res.status(201).json({
+                    message: "Compra registrada exitosamente.",
+                    compra_id: compra_id,
+                    producto: producto.nombre,
+                    cantidad: cantidad,
+                    total: `$${total.toFixed(2)}`
+                });
+            });
+        });
+    });
+});
+
 
 // Levantar el servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Listo para recibir peticiones POST en /registro`);
 });
-
