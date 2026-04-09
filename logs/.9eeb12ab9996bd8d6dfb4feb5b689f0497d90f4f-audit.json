@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "c:\\Users\\ccujm\\OneDrive\\Documentos\\ING\\2 cuatri\\seguridad\\modulo registro seguro\\logs\\.9eeb12ab9996bd8d6dfb4feb5b689f0497d90f4f-audit.json",
+    "files": [
+        {
+            "date": 1775767824578,
+            "name": "c:\\Users\\ccujm\\OneDrive\\Documentos\\ING\\2 cuatri\\seguridad\\modulo registro seguro\\logs\\app-2026-04-09.log",
+            "hash": "a12f253e2da38c5a12616c60f3eeed7a5afaad115b3168a69e03a654103e07aa"
+        }
+    ],
+    "hashType": "sha256"
+}

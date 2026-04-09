@@ -1,0 +1,66 @@
+[2026-04-09 14:50:24] | [INFO] | === SERVIDOR INICIADO ===
+[2026-04-09 14:50:24] | [DEBUG] | Base de datos conectada: usuarios.db
+[2026-04-09 14:50:24] | [DEBUG] | JWT_SECRET configurado correctamente
+[2026-04-09 14:50:24] | [INFO] | Servidor corriendo en http://localhost:3000
+[2026-04-09 14:50:24] | [DEBUG] | Endpoints disponibles:
+[2026-04-09 14:50:24] | [DEBUG] |   POST   /login
+[2026-04-09 14:50:24] | [DEBUG] |   POST   /registro
+[2026-04-09 14:50:24] | [DEBUG] |   PUT    /cambiar-rol/:email
+[2026-04-09 14:50:24] | [DEBUG] |   PUT    /usuarios/cambiar-password/:email
+[2026-04-09 14:50:24] | [DEBUG] |   POST   /comprar (requiere autenticación)
+[2026-04-09 14:50:50] | [DEBUG] | === SOLICITUD DE LOGIN ===
+[2026-04-09 14:50:50] | [DEBUG] | Validando credenciales de usuario
+[2026-04-09 14:50:50] | [DEBUG] | Buscando usuario en base de datos
+[2026-04-09 14:50:50] | [DEBUG] | Usuario encontrado, verificando contraseña
+[2026-04-09 14:50:50] | [INFO] | Login exitoso para usuario ID: 5
+[2026-04-09 14:50:50] | [DEBUG] | Generando token de autenticación...
+[2026-04-09 14:50:50] | [DEBUG] | Generando token JWT para usuario ID: 5
+[2026-04-09 14:50:50] | [DEBUG] | Token generado exitosamente
+[2026-04-09 14:51:03] | [DEBUG] | === SOLICITUD DE LOGIN ===
+[2026-04-09 14:51:03] | [DEBUG] | Validando credenciales de usuario
+[2026-04-09 14:51:03] | [DEBUG] | Buscando usuario en base de datos
+[2026-04-09 14:51:03] | [DEBUG] | Usuario encontrado, verificando contraseña
+[2026-04-09 14:51:03] | [INFO] | Login exitoso para usuario ID: 5
+[2026-04-09 14:51:03] | [DEBUG] | Generando token de autenticación...
+[2026-04-09 14:51:03] | [DEBUG] | Generando token JWT para usuario ID: 5
+[2026-04-09 14:51:03] | [DEBUG] | Token generado exitosamente
+[2026-04-09 14:55:21] | [DEBUG] | === SOLICITUD DE CAMBIO DE ROL ===
+[2026-04-09 14:55:21] | [DEBUG] | Validando nuevo rol proporcionado
+[2026-04-09 14:55:21] | [DEBUG] | Buscando usuario en base de datos
+[2026-04-09 14:55:21] | [DEBUG] | Usuario encontrado, actualizando rol
+[2026-04-09 14:55:21] | [INFO] | Rol actualizado exitosamente para usuario: pr...@ejemplo.com a admin
+[2026-04-09 14:57:31] | [DEBUG] | === VERIFICANDO TOKEN DE AUTENTICACIÓN ===
+[2026-04-09 14:58:47] | [DEBUG] | === VERIFICANDO TOKEN DE AUTENTICACIÓN ===
+[2026-04-09 14:58:55] | [DEBUG] | === VERIFICANDO TOKEN DE AUTENTICACIÓN ===
+[2026-04-09 15:05:10] | [INFO] | === SERVIDOR INICIADO ===
+[2026-04-09 15:05:10] | [DEBUG] | Base de datos conectada: usuarios.db
+[2026-04-09 15:05:10] | [DEBUG] | JWT_SECRET configurado correctamente
+[2026-04-09 15:05:10] | [INFO] | Servidor corriendo en http://localhost:3000
+[2026-04-09 15:05:10] | [DEBUG] | Endpoints disponibles:
+[2026-04-09 15:05:10] | [DEBUG] |   POST   /login
+[2026-04-09 15:05:10] | [DEBUG] |   POST   /registro
+[2026-04-09 15:05:10] | [DEBUG] |   PUT    /cambiar-rol/:email
+[2026-04-09 15:05:10] | [DEBUG] |   PUT    /usuarios/cambiar-password/:email
+[2026-04-09 15:05:10] | [DEBUG] |   POST   /comprar (requiere autenticación)
+[2026-04-09 15:05:19] | [DEBUG] | === SOLICITUD DE LOGIN ===
+[2026-04-09 15:05:19] | [DEBUG] | Validando credenciales de usuario
+[2026-04-09 15:05:19] | [DEBUG] | Buscando usuario en base de datos
+[2026-04-09 15:05:19] | [DEBUG] | Usuario encontrado, verificando contraseña
+[2026-04-09 15:05:19] | [INFO] | Login exitoso para usuario ID: 5
+[2026-04-09 15:05:19] | [DEBUG] | Generando token de autenticación...
+[2026-04-09 15:05:19] | [DEBUG] | Generando token JWT para usuario ID: 5
+[2026-04-09 15:05:19] | [DEBUG] | Token generado exitosamente
+[2026-04-09 15:06:06] | [DEBUG] | === VERIFICANDO TOKEN DE AUTENTICACIÓN ===
+[2026-04-09 15:06:06] | [DEBUG] | Validando token JWT...
+[2026-04-09 15:06:06] | [DEBUG] | Token válido, usuario autenticado correctamente - ID: 5
+[2026-04-09 15:06:06] | [DEBUG] | === SOLICITUD DE COMPRA ===
+[2026-04-09 15:06:06] | [DEBUG] | Procesando compra para usuario autenticado ID: 5
+[2026-04-09 15:06:06] | [DEBUG] | Validando datos de la compra
+[2026-04-09 15:06:06] | [DEBUG] | Buscando producto ID: 1
+[2026-04-09 15:06:06] | [DEBUG] | Producto encontrado: Laptop Gamer Pro - Stock: 10 - Precio: 1299.99
+[2026-04-09 15:06:06] | [DEBUG] | Stock disponible, procesando compra - Total: 2599.98
+[2026-04-09 15:06:06] | [DEBUG] | Registrando compra en base de datos
+[2026-04-09 15:06:06] | [INFO] | Compra registrada exitosamente - ID: 1 - Usuario: 5 - Producto: Laptop Gamer Pro - Cantidad: 2 - Total: 2599.98
+[2026-04-09 15:06:06] | [DEBUG] | Actualizando stock del producto
+[2026-04-09 15:06:06] | [DEBUG] | Stock actualizado correctamente
+[2026-04-09 15:06:06] | [INFO] | Compra completada con éxito para usuario 5
