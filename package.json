@@ -5,7 +5,9 @@
   "main": "database.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "security-scan": "node scan.js",
+    "security-report": "node generate-report.js"
   },
   "keywords": [],
   "author": "",
@@ -20,5 +22,11 @@
     "sqlite3": "^5.1.7",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "@nodesecure/js-x-ray": "^14.0.0",
+    "eslint": "^10.2.0",
+    "eslint-plugin-no-unsanitized": "^4.1.5",
+    "eslint-plugin-security": "^4.0.0"
   }
 }

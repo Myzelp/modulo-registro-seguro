@@ -64,3 +64,23 @@
 [2026-04-09 15:06:06] | [DEBUG] | Actualizando stock del producto
 [2026-04-09 15:06:06] | [DEBUG] | Stock actualizado correctamente
 [2026-04-09 15:06:06] | [INFO] | Compra completada con éxito para usuario 5
+[2026-04-09 15:36:16] | [INFO] | === SERVIDOR INICIADO ===
+[2026-04-09 15:36:16] | [DEBUG] | Base de datos conectada: usuarios.db
+[2026-04-09 15:36:16] | [DEBUG] | JWT_SECRET configurado correctamente
+[2026-04-09 15:36:16] | [INFO] | Servidor corriendo en http://localhost:3000
+[2026-04-09 15:36:16] | [DEBUG] | Endpoints disponibles:
+[2026-04-09 15:36:16] | [DEBUG] |   POST   /login
+[2026-04-09 15:36:16] | [DEBUG] |   POST   /registro
+[2026-04-09 15:36:16] | [DEBUG] |   PUT    /cambiar-rol/:email
+[2026-04-09 15:36:16] | [DEBUG] |   PUT    /usuarios/cambiar-password/:email
+[2026-04-09 15:36:16] | [DEBUG] |   POST   /comprar (requiere autenticación)
+[2026-04-09 15:54:27] | [INFO] | === SERVIDOR INICIADO ===
+[2026-04-09 15:54:27] | [DEBUG] | Base de datos conectada: usuarios.db
+[2026-04-09 15:54:27] | [DEBUG] | JWT_SECRET configurado correctamente
+[2026-04-09 15:54:27] | [INFO] | Servidor corriendo en http://localhost:3000
+[2026-04-09 15:54:27] | [DEBUG] | Endpoints disponibles:
+[2026-04-09 15:54:27] | [DEBUG] |   POST   /login
+[2026-04-09 15:54:27] | [DEBUG] |   POST   /registro
+[2026-04-09 15:54:27] | [DEBUG] |   PUT    /cambiar-rol/:email
+[2026-04-09 15:54:27] | [DEBUG] |   PUT    /usuarios/cambiar-password/:email
+[2026-04-09 15:54:27] | [DEBUG] |   POST   /comprar (requiere autenticación)
